@@ -21,24 +21,30 @@ class App extends Component {
   loadArticles = async () => {
     this.setState({ loading: true, articles: [] });
 
-    const ids = [];
-    while (ids.length < 20) {
+    const articles = [];
+    const usedIds = new Set();
+
+    while (articles.length < 5) {
       const randomId = Math.floor(Math.random() * 1000) + 100;
-      if (!ids.includes(randomId)) ids.push(randomId);
+      if (usedIds.has(randomId)) continue;
+      usedIds.add(randomId);
+
+      try {
+        const res = await fetch(`https://hn.algolia.com/api/v1/items/${randomId}`);
+        const article = await res.json();
+
+        if (article && article.title && article.url && article.author) {
+          articles.push(article);
+        }
+      } catch (e) { }
     }
 
-    for (let id of ids) {
-      const res = await fetch(`https://hn.algolia.com/api/v1/items/${id}`);
-      const article = await res.json();
-      this.setState((prevState) => ({
-        articles: [...prevState.articles, article]
-      }));
-    }
+    this.setState({ articles });
 
     this.timeoutId = setTimeout(() => {
       this.setState({ loading: false });
       this.timeoutId = null;
-    }, 2000);
+    }, 1000);
   };
 
   render() {
